@@ -4,7 +4,7 @@ import random
 
 #CONNEXION TO THE DATABASE
 conn_str = ("Driver={SQL Server};"
-            "Server=LAPTOP-A8LPU60E\SQLEXPRESS;"
+            "Server=LAPTOP-A8LPU60E\\SQLEXPRESS;"
             "Database=JEUKANJI;"
             "Trusted_Connection=yes;")
 conn = pyodbc.connect(conn_str)
