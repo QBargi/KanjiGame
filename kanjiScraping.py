@@ -11,7 +11,7 @@ conn_str = ("Driver={SQL Server};"
 conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
 
-#Scrapping du kanji sur l'adresse 
+#Scrapping du kanji décrit à l'url adresse
 def kanji_scraping(adresse):
     response=requests.get(adresse)
     soup=BeautifulSoup(response.content,"html.parser")
@@ -33,15 +33,15 @@ def kanji_scraping(adresse):
     cursor.execute(f"INSERT INTO DIFFICULTIES VALUES (N'{kanji}','{difficulty}')")
     
 #Scrapping des urls de kanji sur la page d'accueil du dictionnaire des joyo kanjis (https://jitenon.com/cat/common_kanji.php)
-#Renvoie un tableau des urls des kanjis 
+#Renvoie un tableau des urls des kanjis comportant nb_strokes traits
 def url_scraping(nb_strokes):
     response=requests.get("https://jitenon.com/cat/common_kanji.php")
     soup=BeautifulSoup(response.content,"html.parser")
     kanjiByStroke=soup.find("div",attrs={'id':f'parts{nb_strokes}'})
     return ["https:"+link.get('href') for link in kanjiByStroke.find_all('a')]
 
-for nb_strokes in range(1,24):
+for nb_strokes in range(1,24): #Scrapping des kanjis comportant de 1 à 24 traits
     for link in url_scraping(nb_strokes):
         kanji_scraping(link)
-kanji_scraping("https://jitenon.com/kanji/%E9%AC%B1")
+kanji_scraping("https://jitenon.com/kanji/%E9%AC%B1") #Scrapping du kanji manquant (29 traits)
 cursor.commit()
