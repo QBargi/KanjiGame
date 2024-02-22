@@ -19,23 +19,26 @@ def pick_a_word():
 
 #RANDOM PICK OF A READING FOR THE KANJI kanji
 def lecture_random(kanji):
-    #WITH THE TABLE OF ALL THE LECTURES OF A KANJI, PICK A RANDOM LECTURE
-    cursor.execute(f"WITH LECTURES_KANJI AS (\
-                            SELECT ROW_NUMBER() OVER (PARTITION BY ID ORDER BY LECTURE) RN,\
-                                   ID,\
-                                   LECTURE\
-                            FROM KANJIS\
-                            WHERE ID=N'{kanji}'\
-                            )\
-                     SELECT * FROM LECTURES_KANJI WHERE RN = FLOOR(RAND()* (SELECT MAX(RN) FROM LECTURES_KANJI))+1")
-    random_reading=cursor.fetchone()[2] #Select only the random-choosed lecture
-    if not is_katakana(random_reading[0]): #Check if the reading is not in katakana, if it is, convert it to hiragana
-        return random_reading
+    if is_kana(kanji): #CHECK IF THE CARACTER kanji IS AN ALPHABET CARACTER (KANA) OR A KANJI
+        return kanji
     else:
-        random_reading_hiragana=''
-        for caracter in random_reading:
-            random_reading_hiragana+=katakana_to_hiragana(caracter)
-        return random_reading_hiragana
+        #WITH THE TABLE OF ALL THE LECTURES OF A KANJI, PICK A RANDOM LECTURE
+        cursor.execute(f"WITH LECTURES_KANJI AS (\
+                                SELECT ROW_NUMBER() OVER (PARTITION BY ID ORDER BY LECTURE) RN,\
+                                    ID,\
+                                    LECTURE\
+                                FROM KANJIS\
+                                WHERE ID=N'{kanji}'\
+                                )\
+                        SELECT * FROM LECTURES_KANJI WHERE RN = FLOOR(RAND()* (SELECT MAX(RN) FROM LECTURES_KANJI))+1")
+        random_reading=cursor.fetchone()[2] #Select only the random-choosed lecture
+        if not is_katakana(random_reading[0]): #Check if the reading is not in katakana, if it is, convert it to hiragana
+            return random_reading
+        else:
+            random_reading_hiragana=''
+            for caracter in random_reading:
+                random_reading_hiragana+=katakana_to_hiragana(caracter)
+            return random_reading_hiragana
 
 #ASKING THE PLAYER AN ANSWER
 def asking(possibilities):
@@ -58,7 +61,11 @@ def array_possibilities(word):
             while True:
                 new_lecture_random=''
                 for kanji in word[1]:
-                    new_lecture_random+=lecture_random(kanji)
+                    if is_same_kanji(kanji): #CHECK IF THE CARACTER kanji IS 々, THEN IT IS READ THE SAME WAY AS THE PREVIOUS ONE
+                        new_lecture_random+=new_lecture_carac    
+                    else:
+                        new_lecture_carac=lecture_random(kanji)
+                        new_lecture_random+=new_lecture_carac
                 if new_lecture_random!=word[2]: #We do not show the good result twice --- NEED TO CHECK THERE ARE NOT 2 SAME ANSWERS
                     break 
             possibilities[pos_new_lect]=new_lecture_random
@@ -71,6 +78,9 @@ def is_kana(c):
 #RETURN TRUE IF c IS A KATAKANA (ONE OF THE JAPANESE ALPHABET)
 def is_katakana(c):
     return u'\u30A0' <= c <= u'\u30FF'
+
+def is_same_kanji(c):
+    return c=="々"
 
 #CONVERT A KATAKANA CARACTER TO A HIRAGANA CARACTER USING UNICODE
 def katakana_to_hiragana(c):
@@ -87,5 +97,4 @@ def jeu():
         print("Dommage...")
 
 
-#print(is_kana("々")) #Faut régler ce pb
 jeu()
