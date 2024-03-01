@@ -14,7 +14,13 @@ cursor = conn.cursor()
 #RANDOM PICK OF A WORD
 #RETURN AN ARRAY CONTAINING THE INFORMATION OF THE WORD LIKE [ID, KANJIS, LECTURE]
 def pick_a_word():
-    cursor.execute("SELECT * FROM MOTS WHERE ID = FLOOR(RAND()* (SELECT MAX(ID) FROM MOTS))+1")
+    cursor.execute("WITH MOTS_RN AS (\
+                                SELECT ROW_NUMBER() OVER (ORDER BY MOT) RN,\
+                                    MOT,\
+                                    LECTURE\
+                                FROM MOTS\
+                                )\
+                                SELECT * FROM MOTS_RN WHERE RN= CEILING(RAND()* (SELECT COUNT(*) FROM MOTS_RN))")
     return cursor.fetchone()
 
 #RANDOM PICK OF A READING FOR THE KANJI kanji

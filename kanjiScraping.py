@@ -45,3 +45,9 @@ for nb_strokes in range(1,24): #Scrapping des kanjis comportant de 1 à 24 trait
         kanji_scraping(link)
 kanji_scraping("https://jitenon.com/kanji/%E9%AC%B1") #Scrapping du kanji manquant (29 traits)
 cursor.commit()
+
+
+# erratum=['赤', '秋', '飴', '雨', '姉', '兄', '青', '朝', '足', '頭', '後', '父', '誰', '絵', '駅']
+# for each in erratum:
+#     kanji_scraping(f"https://jitenon.com/kanji/{each}")
+# cursor.commit()
