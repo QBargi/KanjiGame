@@ -30,13 +30,13 @@ def lecture_random(kanji):
     else:
         #WITH THE TABLE OF ALL THE LECTURES OF A KANJI, PICK A RANDOM LECTURE
         cursor.execute(f"WITH LECTURES_KANJI AS (\
-                                SELECT ROW_NUMBER() OVER (PARTITION BY ID ORDER BY LECTURE) RN,\
+                                SELECT ROW_NUMBER() OVER (ORDER BY LECTURE) RN,\
                                     ID,\
                                     LECTURE\
                                 FROM KANJIS\
                                 WHERE ID=N'{kanji}'\
                                 )\
-                        SELECT * FROM LECTURES_KANJI WHERE RN = FLOOR(RAND()* (SELECT MAX(RN) FROM LECTURES_KANJI))+1")
+                        SELECT * FROM LECTURES_KANJI WHERE RN = CEILING(RAND()* (SELECT COUNT(*) FROM LECTURES_KANJI))")
         random_reading=cursor.fetchone()[2] #Select only the random-choosed lecture
         if not is_katakana(random_reading[0]): #Check if the reading is not in katakana, if it is, convert it to hiragana
             return random_reading
@@ -58,23 +58,38 @@ def asking(possibilities):
 
 #RETURN AN ARRAY OF 4 POSSIBLES READINGS FOR word AND THE POSITION OF THE CORRECT READING IN THIS ARRAY
 def array_possibilities(word):
-    possibilities=['','','','']
+    possibilities=['-','-','-','-']
     position_result=random.randint(0,3)
     possibilities[position_result]=word[2]
     #Creation of 3 random possibilities
     for pos_new_lect in range(len(possibilities)):
         if pos_new_lect!=position_result:
-            while True:
-                new_lecture_random=''
+            new_lecture_random=''
+            while new_lecture_random not in possibilities:
                 for kanji in word[1]:
                     if is_same_kanji(kanji): #CHECK IF THE CARACTER kanji IS 々, THEN IT IS READ THE SAME WAY AS THE PREVIOUS ONE
                         new_lecture_random+=new_lecture_carac    
                     else:
                         new_lecture_carac=lecture_random(kanji)
                         new_lecture_random+=new_lecture_carac
-                if new_lecture_random!=word[2]: #We do not show the good result twice --- NEED TO CHECK THERE ARE NOT 2 SAME ANSWERS
-                    break 
-            possibilities[pos_new_lect]=new_lecture_random
+                if new_lecture_random not in possibilities: #We do not show a result twice 
+                    possibilities[pos_new_lect]=new_lecture_random
+                    break
+                else: #If the new_lecture_random is already in the array, change a random kanji of the word by one from the same difficulty to get another reading
+                    new_lecture_random='' #To make the while loop again
+                    while True:
+                        random_change=random.randint(0,len(word[1])-1)
+                        if not is_kana(word[1][random_change]) and not is_same_kanji(word[1][random_change]):
+                            cursor.execute(f"WITH KANJI_RN AS (\
+                                                                SELECT ROW_NUMBER() OVER (ORDER BY ID) RN,\
+                                                                        ID,\
+                                                                        LECTURE\
+                                                                FROM KANJIS\
+                                                                )\
+                                                                SELECT * FROM KANJI_RN WHERE RN = CEILING(RAND()* (SELECT COUNT(*) FROM KANJI_RN))")
+                            random_change_kanji=cursor.fetchone()[1]
+                            word[1]=word[1].replace(word[1][random_change],random_change_kanji) #Il faut mettre un kanji random ici
+                            break
     return [possibilities, position_result]
 
 #RETURN TRUE IF c IS A KANA (ONE OF THE JAPANESE ALPHABET)
@@ -100,7 +115,7 @@ def jeu():
     if asking(possibilities)==position_result:
         print("Félicitations!")
     else:
-        print("Dommage...")
+        print(f"Dommage... La bonne réponse était {result[2]}")
 
 
 jeu()
